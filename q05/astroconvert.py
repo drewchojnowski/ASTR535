@@ -61,7 +61,7 @@ def fluxunits(wavelength=3000,flambda=0,fnu=0):
         print 'F_lambda:',fnu*(cspeed/(wavelength**2)),' erg/cm^2/s/angstrom'
 
     if fnu==0:
-        print 'F_nu:',flambda*((wavelength**2)/cspeed),' erg/cm^2/s/angstrom'
+        print 'F_nu:',flambda*((wavelength**2)/cspeed),' erg/cm^2/s/Hz'
 
     return
 
