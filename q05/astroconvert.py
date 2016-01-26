@@ -50,22 +50,45 @@ def lightunits(wavelength=0,frequency=0,energy=0):
 #     FNU: erg/cm^2/s/Hz
 ##################################################################
 
-def fluxunits(wavelength=3000,flambda=0,fnu=0):
+def fluxunits(wavelength=3000,f_lambda=0.0,f_nu=0):
     cspeed=2.99792458e18 # angstroms/s
 
-    if flambda==0 and fnu==0:
-        print 'No input flux provided; defaulting to Flambda=1'
-        flambda=1.0
+    if f_lambda==0 and f_nu==0:
+        print 'No flux value provided, so defaulting to f_lambda=1 @ 3000 angstroms'
+        f_lambda=1.0
 
-    if flambda==0:
-        print 'F_lambda:',fnu*(cspeed/(wavelength**2)),' erg/cm^2/s/angstrom'
+    if f_lambda==0:
+        print 'F_lambda:',f_nu*(cspeed/(wavelength**2)),' erg/cm^2/s/angstrom'
 
-    if fnu==0:
-        print 'F_nu:',flambda*((wavelength**2)/cspeed),' erg/cm^2/s/Hz'
+    if f_nu==0:
+        print 'F_nu:',f_lambda*((wavelength**2)/cspeed),' erg/cm^2/s/Hz'
 
     return
 
+##################################################################
+# abnu2stmag(m_lambda,m_nu)
+#
+# This function converts between monochromatic apparent magnitudes 
+# in the # ABNU (frequency) and STMAG (wavelength) systems.
+#
+# Input/output units:
+#     WAVELENGTH: angstroms (10^-10 m)
+#     M_LAMBDA: mags
+#     M_NU: mags
+##################################################################
 
+def abnu2stmag(wavelength=5500,m_lambda=0,m_nu=0):
+    if m_lambda==0 and m_nu==0:
+        print 'No mag value provided, so defaulting to m_lambda=1 @ 5500 angstroms'
+        f_lambda=1.0
+
+    if m_nu==0:
+        print 'm_nu: ',m_lambda-(5.0*math.log10(wavelength))+18.70175,' mags'
+
+    if m_lambda==0:
+        print 'm_lambda: ',m_nu+(5.0*math.log10(wavelength))-18.70175,' mags'
+
+    return
 
 
 
