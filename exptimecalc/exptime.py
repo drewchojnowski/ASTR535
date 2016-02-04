@@ -8,15 +8,14 @@ import numpy as np
 # Vega flux zeropoints
 # borrowed from http://www.astronomy.ohio-state.edu/~martini/usefuldata.html
 # vega_*: (erg/s/cm^2/angstrom)
-# ab_*: (erg/s/cm^2/Hz)
-vega_u=4.175e-9     ;ab_u=1.79e-20
-vega_b=6.32e-9      ;ab_b=4.063e-20
-vega_v=3.631e-9     ;ab_v=3.636e-20
-vega_r=2.177e-9     ;ab_r=3.064e-20
-vega_i=1.126e-9     ;ab_i=2.416e-20
-vega_j=0.3147e-9    ;ab_j=1.589e-20
-vega_h=0.1138e-9    ;ab_h=1.021e-20
-vega_k=0.03961e-9   ;ab_k=0.640e-20
+vega_u=4.175e-9     
+vega_b=6.32e-9      
+vega_v=3.631e-9     
+vega_r=2.177e-9     
+vega_i=1.126e-9     
+vega_j=0.3147e-9    
+vega_h=0.1138e-9    
+vega_k=0.03961e-9
 
 # Johnson filters
 # borrowed from http://www.astronomy.ohio-state.edu/~martini/usefuldata.html
