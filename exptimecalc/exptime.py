@@ -57,6 +57,7 @@ def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth
         print 'To achieve SNR=',snr,' for a ',band,'=',starmag,' object, using the '
         print telescope,' telescope:\n'
         print '\nexptime = ',expt,' s'
+        print '===================================================================='  
 
     return expt
 
