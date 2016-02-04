@@ -33,7 +33,7 @@ wave_k=21900.0  ; width_k=4100.0
 hplanck=6.6260755e-27 # erg s
 cspeed=2.99792458e18  # angstrom/s
 
-def exptime(telescope='nmsu1m',instrument=None,exptime=1,wavelength=5500,bandwidth=1000,starmag=22,band='V',
+def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth=1000,starmag=22,band='V',
             magsystem='Vega',seeing=1.0,airmass=1.0,lunarphase=7.0,silent=False):
 
     if magsystem is None:
@@ -47,16 +47,18 @@ def exptime(telescope='nmsu1m',instrument=None,exptime=1,wavelength=5500,bandwid
     if telescope=='3.5m': mirror_area=get_mirror_area(3.5,'m')
     flux=get_flux(starmag=starmag,band=band,magsystem=magsystem)
     int_lambda=0.5*((wavelength+bandwidth/2.)**2-(wavelength-bandwidth/2.)**2)
-    signal=mirror_area*exptime*atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
+
+    s_prime=atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
+
+    expt=(snr**2)/(s_prime*mirror_area) # calculate the exposure time
 
     if silent is False:
         print '===================================================================='  
-        print '# of photons collected in a ',exptime,' second observation'
-        print 'of a ',band,'=',starmag,' object by the ',telescope,' telescope:\n'
-        print signal
-        print '\nSNR = ',signal/math.sqrt(signal)
+        print 'To achieve SNR=',snr,' for a ',band,'=',starmag,' object, using the '
+        print telescope,' telescope:\n'
+        print '\nexptime = ',expt,' s'
 
-    return signal
+    return expt
 
 
 
