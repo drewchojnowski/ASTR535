@@ -34,8 +34,8 @@ wave_k=21900.0  ; width_k=4100.0
 hplanck=6.6260755e-27 # erg s
 cspeed=2.99792458e18  # angstrom/s
 
-def exptime(telescope='nmsu1m',instrument=None,exptime=1,wavelength=5500,bandwidth=1000,starmag=22,band='V',magsystem='Vega'
-            seeing=1.0,airmass=1.0,lunarphase=7.0):
+def exptime(telescope='nmsu1m',instrument=None,exptime=1,wavelength=5500,bandwidth=1000,starmag=22,band='V',
+            magsystem='Vega',seeing=1.0,airmass=1.0,lunarphase=7.0,silent=False):
 
     if magsystem is None:
         choice=raw_input('Enter 1 for Vega mag. system, 2 for AB mag. system: ')
@@ -43,14 +43,19 @@ def exptime(telescope='nmsu1m',instrument=None,exptime=1,wavelength=5500,bandwid
         if choice=='2': magsystem='AB'
 
     sys_efficiency=get_system_efficiency('nmsu1m')
-    atm_trans=get_atmospheric_transmission(wavelength)
+    atm_trans=get_atmospheric_transmission(wavelength=wavelength)
     if telescope=='nmsu1m': mirror_area=get_mirror_area(1,'m')
     if telescope=='3.5m': mirror_area=get_mirror_area(3.5,'m')
-    flux=get_flux(starmag,band,magsystem)
+    flux=get_flux(starmag=starmag,band=band,magsystem=magsystem)
     int_lambda=0.5*((wavelength+bandwidth/2.)**2-(wavelength-bandwidth/2.)**2)
     signal=mirror_area*exptime*atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
-    
-    print 'signal = ',signal,' photons'
+
+    if silent is False:
+        print '===================================================================='  
+        print '# of photons collected in a ',exptime,' second observation'
+        print 'of a ',band,'=',starmag,' object by the ',telescope,' telescope:\n'
+        print signal
+        print '\nSNR = ',signal/math.sqrt(signal)
 
     return signal
 
