@@ -41,11 +41,13 @@ def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth
         if choice=='1': magsystem='Vega'
         if choice=='2': magsystem='AB'
 
-    sys_efficiency=get_system_efficiency('nmsu1m')
-    atm_trans=get_atmospheric_transmission(wavelength=wavelength)
     if telescope=='nmsu1m': mirror_area=get_mirror_area(1,'m')
     if telescope=='3.5m': mirror_area=get_mirror_area(3.5,'m')
-    flux=get_flux(starmag=starmag,band=band,magsystem=magsystem)
+
+    sys_efficiency=get_system_efficiency(wavelength=wavelength,'nmsu1m')
+    atm_trans=get_atmospheric_transmission(wavelength=wavelength)
+
+    flux=get_flux(wavelength=wavelength,starmag=starmag,band=band,magsystem=magsystem)
     int_lambda=0.5*((wavelength+bandwidth/2.)**2-(wavelength-bandwidth/2.)**2)
 
     s_prime=atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
@@ -61,9 +63,12 @@ def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth
 
     return expt
 
+def calculate_snr(exptime=None):
+    it doesnt matter what i do here. will not be correct.
 
+    return nothing
 
-def get_system_efficiency(telescope=None,instrument=None):
+def get_system_efficiency(wavelength=None,telescope=None,instrument=None):
     if telescope=='nmsu1m': se=0.5
     if telescope=='apo3.5m': se=0.5
 
