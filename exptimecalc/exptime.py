@@ -37,16 +37,23 @@ cspeed=2.99792458e18  # angstrom/s
 EXPTIME: 
 exposure time calculator
 """
-def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth=1000,starmag=22,
-            band='V',magsystem='Vega',seeing=1.0,airmass=1.0,lunarphase=7.0,silent=False):
+def exptime(telescope='nmsu1m',instrument=None,exptime=600,starmag=22,band='V',magsystem='Vega',
+            wavelength=5500,bandwidth=1000,seeing=1.0,airmass=1.0,lunarphase=7.0,aperture=1.0,
+            readnoise=5.0,platescale=0.5,skymag_per_arcsec2=21,zeropoint=23.5,silent=False):
 
     if magsystem is None:
-        choice=raw_input('Enter 1 for Vega mag. system, 2 for AB mag. system: ')
-        if choice=='1': magsystem='Vega'
-        if choice=='2': magsystem='AB'
+        choice=int(raw_input('Enter 1 for Vega mag. system, 2 for AB mag. system: '))
+        if choice==1: magsystem='Vega'
+        if choice==2: magsystem='AB'
 
-    if telescope=='nmsu1m': mirror_area=get_mirror_area(1,'m')
-    if telescope=='3.5m': mirror_area=get_mirror_area(3.5,'m')
+    if telescope is None:
+        choice=int(raw_input('Enter 1 for NMSU 1.0m\n      2 for APO 3.5m\n:'))
+        if choice==1: telescope='nmsu1m'
+        if choice==2: telescope='3.5m'
+    mirror_area=get_mirror_area(telescope)
+
+    if snr is None:
+        snr=float(raw_input('Desired signal-to-noise ratio? '))
 
     signal=get_signal(exptime=exptime,wavelength=wavelength,bandwidth=bandwidth,starmag=starmag,band=band,
                       magsystem=magsystem,seeing=seeing,airmass=airmass,lunarphase=lunarphase,silent=silent)
@@ -63,26 +70,29 @@ def exptime(telescope='nmsu1m',instrument=None,snr=100,wavelength=5500,bandwidth
     return expt
 
 """
-CALCULATE_SNR: 
+SNR: 
 calculate the expected S/N ratio given an exposure time
 """
-def calculate_snr(telescope='nmsu1m',instrument=None,exptime=600,starmag=22,band='V',magsystem='Vega',
-                  wavelength=5500,bandwidth=1000,seeing=1.0,airmass=1.0,lunarphase=7.0,aperture=1.0,
-                  readnoise=5.0,platescale=0.5,sky=21,silent=False):
+def snr(telescope='nmsu1m',instrument=None,exptime=600,starmag=22,band='V',magsystem='Vega',
+        wavelength=5500,bandwidth=1000,seeing=1.0,airmass=1.0,lunarphase=7.0,aperture=1.0,
+        readnoise=5.0,platescale=0.5,skymag_per_arcsec2=21,zeropoint=23.5,silent=False):
 
     signal=get_signal(exptime=exptime,wavelength=wavelength,bandwidth=bandwidth,starmag=starmag,band=band,
-                      magsystem=magsystem,seeing=seeing,airmass=airmass,lunarphase=lunarphase,silent=silent)
+                      magsystem=magsystem,seeing=seeing,airmass=airmass,lunarphase=lunarphase,silent=silent,
+                      zeropoint=zeropoint)
+
     npix=math.pi*(aperture**2)*(1.0/platescale)
-    apix=math.pi*(aperture**2)
-<<<<<<< HEAD
+    skyarea=math.pi*(aperture**2)
 
-    snr=signal/math.sqrt(signal+(sky*apix)+(npix*(readnoise**2)))
+    if zeropoint is not None:
+        bf=10**(-0.4*(skymag_per_arcsec2-zeropoint))
 
-    print signal
+    snr=(signal*exptime)/math.sqrt(signal*exptime+(bf*skyarea*exptime)+(npix*(readnoise**2)))
+
     if silent is False:
         print '===================================================================='  
-        print 'In a ',exptime,' s exposure of a ',band,'=',starmag,' object, using the '
-        print telescope,' telescope:\n'
+        print 'In a',exptime,'s exposure of a',band,'=',starmag,'object, using the'
+        print telescope,'telescope:\n'
         print '\nS/N = ',snr
         print '===================================================================='  
 
@@ -93,35 +103,16 @@ GET_SIGNAL:
 returns the expected photons per second
 """
 def get_signal(exptime=None,wavelength=None,bandwidth=None,starmag=None,band=None,magsystem=None,
-               seeing=None,airmass=None,lunarphase=None,silent=None):
+               seeing=None,airmass=None,lunarphase=None,zeropoint=None,silent=None):
 
-=======
-
-    snr=signal/math.sqrt(signal+(sky*apix)+(npix*(readnoise**2)))
-
-    print signal
-    if silent is False:
-        print '===================================================================='  
-        print 'In a ',exptime,' s exposure of a ',band,'=',starmag,' object, using the '
-        print telescope,' telescope:\n'
-        print '\nS/N = ',snr
-        print '===================================================================='  
-
-    return snr
-
-"""
-GET_SIGNAL: 
-returns the expected photons per second
-"""
-def get_signal(exptime=None,wavelength=None,bandwidth=None,starmag=None,band=None,magsystem=None,
-               seeing=None,airmass=None,lunarphase=None,silent=None):
-
->>>>>>> f045be55b22467c902636204d3df0b0ae80caaa1
-    sys_efficiency=get_system_efficiency(wavelength=wavelength,telescope='nmsu1m')
-    atm_trans=get_atmospheric_transmission(wavelength=wavelength)
-    flux=get_flux(wavelength=wavelength,starmag=starmag,band=band,magsystem=magsystem)
-    int_lambda=0.5*((wavelength+bandwidth/2.)**2-(wavelength-bandwidth/2.)**2)
-    signal=atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
+    if zeropoint is None:
+        sys_efficiency=get_system_efficiency(wavelength=wavelength,telescope='nmsu1m')
+        atm_trans=get_atmospheric_transmission(wavelength=wavelength)
+        flux=get_flux(wavelength=wavelength,starmag=starmag,band=band,magsystem=magsystem)
+        int_lambda=0.5*((wavelength+bandwidth/2.)**2-(wavelength-bandwidth/2.)**2)
+        signal=atm_trans*sys_efficiency*flux*(1./hplanck)*(1./cspeed)*int_lambda
+    else:
+        signal=10**(-0.4*(starmag-zeropoint))
 
     return signal
 
@@ -148,9 +139,9 @@ def get_atmospheric_transmission(wavelength=None):
 GET_MIRROR_AREA: 
 returns the are of the telescope mirror.
 """
-def get_mirror_area(msize=None,munits=None):
-    if munits=='m': msize=msize*100.0
-    if munits=='cm': msize=msize
+def get_mirror_area(telescope):
+    if telescope=='nmsu1m': msize=1.0*100.0
+    if telescope=='3.5m': msize=3.5*100.0
     ma=math.pi*((msize/2.)**2)
 
     return ma
