@@ -1,4 +1,4 @@
-Sample output:
+Reproduction of the result from problem 12:
 
 In [25]: x=e.snr(starmag=15,exptime=4.12,zeropoint=23.5)
 ====================================================================
@@ -10,7 +10,9 @@ S/N =  100.350273211
 ====================================================================
 
 
-In [2]: x=e.exptime()
+Sample output:
+
+In [2]: x=m.exptime()
 ====================================================================
 To achieve SNR= 100  for a  V = 22  object, using the 
 nmsu1m  telescope:
@@ -19,7 +21,7 @@ nmsu1m  telescope:
 exptime =  1997.73680993  s
 ====================================================================
 
-In [3]: x=e.exptime(telescope='3.5m')
+In [3]: x=m.exptime(telescope='3.5m')
 ====================================================================
 To achieve SNR= 100  for a  V = 22  object, using the 
 3.5m  telescope:
