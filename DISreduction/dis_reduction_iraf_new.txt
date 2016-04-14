@@ -1,0 +1,282 @@
+# This is a log of reduction of DIS data from UT160328.
+# I'm following along with Karen Kinemuchi's reduction cookbook for now,
+# but I plan to convert this to a Pyraf script:
+# http://astronomy.nmsu.edu:8000/apo-wiki/attachment/wiki/DIS/DIS_data_reduction_v2.pdf.gz
+
+# First things first, I need to look at the images and their associated headers to 
+# make sure everything makes sense.
+
+ccdred> hselect *fits $I,imagetyp,exptime,grating,objname,lamp yes > headers.txt
+Warning: FXF: EOF encountered while reading FITS file (160328.0038b.fits)
+Warning: FXF: EOF encountered while reading FITS file (160328.0038r.fits)
+
+# Apparently, there's something wrong with 160328.0038*.fits. 
+# I've now made a directory called "bad", and moved these images there.
+
+# Now taking a look at the file "headers.txt" that I just made with the hselect command...
+# Already I am confused. The file Ar.0003b.fits has imagetype=flat and lamp="Br. Qrtz".
+# So why is it called "Ar"???
+
+# Anyhow, I don't see anything except for a few cosmic rays in the following images:
+# Ar.0003b.fits, Ar.0003r.fits, He.0001b.fits, He.0001r.fits, Ne.0002b.fits, Ne.0002r.fits
+# so I have moved these files into the "bad" directory.
+
+# Apparently it's possible to turn on all three lamp elements at once, since 
+# the files 160328.0032*.fits have lamp=He+Ne+Ar. I guess the separate lamp exposures
+# were just to make sure you get even S/N for lines from the different elements.
+
+# For some reason, the bias frames are all named "BrQrtz*". This is annoying,
+# so I'm going to rename them "bias*".
+
+# Since this is a first pass, I'm going to start with high-resolution grating images.
+# ... moving the low-res images to a directory called "lowres".
+
+# Now for some more inspection of the 66 remaining images.
+
+ccdred> imstat bias*b.fits
+#               IMAGE      NPIX      MEAN    STDDEV       MIN       MAX
+      bias.0017b.fits   2261644      96.3     3.227       83.      835.
+      bias.0018b.fits   2261644     96.27     3.082       84.      602.
+      bias.0019b.fits   2261644     96.24     3.131       83.     1007.
+      bias.0020b.fits   2261644     96.23     3.418       83.     1504.
+      bias.0021b.fits   2261644     96.23      3.12       83.      752.
+      bias.0022b.fits   2261644     96.22     3.254       83.     1662.
+      bias.0023b.fits   2261644      96.2     3.495       83.     2417.
+      bias.0024b.fits   2261644      96.2     3.076       83.     1010.
+      bias.0025b.fits   2261644      96.2     3.979       84.     3562.
+      bias.0026b.fits   2261644      96.2     3.645       83.     2058.
+ccdred> imstat bias*r.fits
+#               IMAGE      NPIX      MEAN    STDDEV       MIN       MAX
+      bias.0017r.fits   2261644     114.8     3.286      103.      228.
+      bias.0018r.fits   2261644     114.8     5.153      104.     4085.
+      bias.0019r.fits   2261644     114.8     4.286      104.     2077.
+      bias.0020r.fits   2261644     114.8      3.41      103.      772.
+      bias.0021r.fits   2261644     114.8     3.434      104.      881.
+      bias.0022r.fits   2261644     114.8     10.99      103.    13623.
+      bias.0023r.fits   2261644     114.8     6.501      102.     3804.
+      bias.0024r.fits   2261644     114.8     3.534      104.     1279.
+      bias.0025r.fits   2261644     114.8     5.225      101.     4323.
+      bias.0026r.fits   2261644     114.8     8.791      104.    10751.
+
+# That all looks fine, so I'll go ahead and average these with ZEROCOMBINE.
+# After setting rdnoise=4.6 and gain=1.75 in the zerocombine parameters...
+
+ccdred> zerocombine bias*b.fits
+ERROR: No 'instrument' translation file specified.
+  "pclip=pclip, grow=0)"
+     line 47: ccdred$zerocombine.cl
+     called as: `zerocombine (input=bias*b.fits)'
+
+# Stupid zerocombine wants an input list rather than a wild card statement.
+# I'm just going to use IMCOMBINE instead.
+
+ccdred> imcombine bias*b.fits ZeroB
+Warning: setting CD1_1 to 1.
+Warning: setting CD2_2 to 1.
+
+Apr 10 13:09: IMCOMBINE
+  combine = average, scale = none, zero = none, weight = none
+  reject = avsigclip, mclip = yes, nkeep = 1
+  lsigma = 3., hsigma = 3.
+  blank = 0.
+                Images 
+        bias.0017b.fits
+        bias.0018b.fits
+        bias.0019b.fits
+        bias.0020b.fits
+        bias.0021b.fits
+        bias.0022b.fits
+        bias.0023b.fits
+        bias.0024b.fits
+        bias.0025b.fits
+        bias.0026b.fits
+
+  Output image = ZeroB, ncombine = 10
+
+# Just for "fun", I'll go ahead and make the list for ZEROCOMBINE and run it,
+# to make sure IMCOMBINE produces the same result.
+
+ccdred> ls bias*b.fits > listbiasB
+
+ccdred> zerocombine
+List of zero level images to combine (@listbiasB): 
+ERROR: No 'instrument' translation file specified.
+  "pclip=pclip, grow=0)"
+     line 47: ccdred$zerocombine.cl
+     called as: `zerocombine ()'
+
+# I just installed IRAF on this laptop, so I guess I need to set an instrument.
+
+ccdred> ccdred.instrument = "ccddb$kpno/camera.dat"
+
+ccdred> zerocombine
+List of zero level images to combine (@listbiasB): 
+Warning: setting CD1_1 to 1.
+Warning: setting CD2_2 to 1.
+
+
+# So now I have ZeroB.fits, made with IMCOMBINE, and ZeroBa.fits, made with ZEROCOMBINE.
+# Is there any difference?
+
+ccdred> imstat ZeroB*
+#               IMAGE      NPIX      MEAN    STDDEV       MIN       MAX
+           ZeroB.fits   2261644     96.23     1.891       92.     175.9
+          ZeroBa.fits   2261644     96.23     1.891       92.     175.9
+
+# No! None whatsoever, even after detailed visual inspection.
+# Conclusion: Zerocombine and Flatcombine are a WASTE OF TIME!
+
+ccdred> !rm -f ZeroBa.fits 
+
+ccdred> imcombine bias*r.fits ZeroR
+Warning: setting CD1_1 to 1.
+Warning: setting CD2_2 to 1.
+
+Apr 10 13:19: IMCOMBINE
+  combine = average, scale = none, zero = none, weight = none
+  reject = avsigclip, mclip = yes, nkeep = 1
+  lsigma = 3., hsigma = 3.
+  blank = 0.
+                Images 
+        bias.0017r.fits
+        bias.0018r.fits
+        bias.0019r.fits
+        bias.0020r.fits
+        bias.0021r.fits
+        bias.0022r.fits
+        bias.0023r.fits
+        bias.0024r.fits
+        bias.0025r.fits
+        bias.0026r.fits
+
+  Output image = ZeroR, ncombine = 10
+
+# Now I've got my master biases for B and R.
+# Time for CCDPROC on the non-bias images.
+# I will need to feed input/output list in here, since I don't want
+# to overwrite my files.
+
+# After CCDPROC (using Karen's parameters), time to make master B and R flats.
+# using combine=median
+
+ccdred> imcombine cproc1.BrQrtz.00*b.fits FlatB
+
+Apr 10 13:29: IMCOMBINE
+  combine = median, scale = none, zero = none, weight = none
+  reject = avsigclip, mclip = yes, nkeep = 1
+  lsigma = 3., hsigma = 3.
+  blank = 0.
+                Images 
+  cproc1.BrQrtz.0007b.fits
+  cproc1.BrQrtz.0008b.fits
+  cproc1.BrQrtz.0009b.fits
+  cproc1.BrQrtz.0010b.fits
+  cproc1.BrQrtz.0011b.fits
+  cproc1.BrQrtz.0012b.fits
+  cproc1.BrQrtz.0013b.fits
+  cproc1.BrQrtz.0014b.fits
+  cproc1.BrQrtz.0015b.fits
+  cproc1.BrQrtz.0016b.fits
+
+  Output image = FlatB, ncombine = 10
+
+ccdred> imcombine cproc1.BrQrtz.00*r.fits FlatR
+
+Apr 10 13:30: IMCOMBINE
+  combine = median, scale = none, zero = none, weight = none
+  reject = avsigclip, mclip = yes, nkeep = 1
+  lsigma = 3., hsigma = 3.
+  blank = 0.
+                Images 
+  cproc1.BrQrtz.0007r.fits
+  cproc1.BrQrtz.0008r.fits
+  cproc1.BrQrtz.0009r.fits
+  cproc1.BrQrtz.0010r.fits
+  cproc1.BrQrtz.0011r.fits
+  cproc1.BrQrtz.0012r.fits
+  cproc1.BrQrtz.0013r.fits
+  cproc1.BrQrtz.0014r.fits
+  cproc1.BrQrtz.0015r.fits
+  cproc1.BrQrtz.0016r.fits
+
+  Output image = FlatR, ncombine = 10
+
+# The master flats look pretty similar to Karen's examples, except 
+# that I neglected to fix the bad columns in the R chip.
+# This could end up being annoying, so I'm stepping back to fix the bad pix.
+# The blue detector looks clean, but red detector has the following bad columns:
+# 804 805 475 1027
+# 1197 1198 1 1027
+
+# Now my FlatR.fits is squeaky clean.
+
+#-----------------------------------------------------
+# I neglected to take notes for the next several steps. However, the steps were:
+#
+# - run RESPONSE on the flats. 
+#
+# - flat field the comps and objs in CCDPROC
+#
+# - use APALL to extract apertures of the same size from the objs and comps.
+# --- for the comps, it's necessary to use as aperture reference a nearby object frame
+# --- since we only had 1 comp (the HeNeAr frame) taken between science images, I only used that one.
+# --- rather than extracting 1-D spectra, I extracted 2-D strips. This is because Chris et al. want rotation curves.
+# --- the 2-D strips cover continuum peak +/- 100 spatial pixels.
+#
+# - run IDENTIFY on the HeNeAr images, using line lists on the DIS website as well as from the KPNO atlas.
+#
+# - had I been using more comps, I would have now run REIDENTIFY to apply the wavelength solution to all comps.
+#
+# - run REFSPEC, to insert into obj headers the comp (160328.0032b, 160328.0032r) to be used. 
+#
+# - finally, run DISPCOR, to apply wavelength solution to the objs. Here's the output from that:
+
+# Red wavelength solution:
+
+crutil> dispcor
+List of input spectra (@inlistR_dispcor): 
+List of output spectra (@outlistR_dispcor): 
+strip.160328.0029r.0001.fits: REFSPEC1 = 'strip.HeNeAr.0032r.0001 1.'
+dcor.160328.0029r.0001.fits: ap = 1, w1 = 6983.309, w2 = 8154.842, dw = 0.572317, nw = 2048
+
+# Blue wavelength solution:
+
+crutil> dispcor
+List of input spectra (@inlistB_dispcor): 
+List of output spectra (@outlistB_dispcor): 
+strip.160328.0029b.0001.fits: REFSPEC1 = 'strip.HeNeAr.0032b.0001 1.'
+dcor.160328.0029b.0001.fits: ap = 1, w1 = 3785.019, w2 = 5049.334, dw = 0.617643, nw = 2048
+Warning: Cannot open file (database/idHeNeAr)
+strip.160328.0031b.0001.fits: REFSPEC1 = 'strip.HeNeAr.0032b.0001 1.'
+dcor.160328.0031b.0001.fits: ap = 1, w1 = 3785.019, w2 = 5049.334, dw = 0.617643, nw = 2048
+
+# That's as far as I got. The DIS website quotes linear dispersion of:
+# 0.62 angstroms/pixel for B1200
+# 0.58 angstroms/pixel for R1200
+
+# What I ended up with was very close to those numbers:
+# 0.617643 angstroms/pixel for B1200
+# 0.572317 angstroms/pixel for R1200
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
