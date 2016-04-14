@@ -15,6 +15,7 @@ def test(rawdata_dir='UT160328/',reduction_dir=None,dodetector='blue',dograting=
     iraf.ccdred()
     iraf.twod()
     iraf.apex()
+    iraf.longs()
     iraf.oned()
 
     # check if a reduction directory exists. If not, make one.
@@ -158,9 +159,20 @@ def test(rawdata_dir='UT160328/',reduction_dir=None,dodetector='blue',dograting=
     print('-'*50)
 
     ###############################################################################################################
+    # run RESPONSE on the master flat, to make a normalized flat.
+    masternormflat=outdir+'NormFlat'+label+'.fits'
+    answer=raw_input('step 4. Normalize the response of the master flat (y/n)? ')
+    if answer=='y':
+        # the normalization spectrum image should probably be set to a subsection of the masternormflat, but i'm using the full image for now.
+        iraf.response(calibrat=masterflat,normaliz=masterflat,response=masternormflat,interac='no',functio='spline3',order='5',low_rej='3',high_rej='3')
+        print('   normalized master flat created')
+
+    print('-'*50)
+
+    ###############################################################################################################
     # flat field the comps and objs via CCDPROC
 
-    answer=raw_input('step 4. Flat field the comps and objs (y/n)? ')
+    answer=raw_input('step 5. Flat field the comps and objs (y/n)? ')
     if answer=='y':
         # set up a list of the input files (comps, objs)
         tmpfiles=np.array(glob.glob(outdir+'cproc1*fits'))
@@ -186,14 +198,14 @@ def test(rawdata_dir='UT160328/',reduction_dir=None,dodetector='blue',dograting=
         # Now for the CCDPROC command
         iraf.ccdproc('@'+infilesfile,output='@'+outfilesfile,ccdtype='',fixpix='no',oversca='no',trim='no',
                      zerocor='no',darkcor='no',flatcor='yes',fixfile='',biassec=biassec,trimsec=datasec,
-                     flat=masterflat,interac='no',low_rej='3',high_re='3')
+                     flat=masternormflat,interac='no',low_rej='3',high_re='3')
         print('   overscan and bias subtracting done')
     print('-'*50)
 
     ###############################################################################################################
     # aperture extraction with APALL
 
-    answer=raw_input('step 5. Extract apertures (y/n)? ')
+    answer=raw_input('step 6. Extract apertures (y/n)? ')
     if answer=='y':
         infiles=np.array(glob.glob(outdir+'cproc2*fits'))
         contpeak=[]
@@ -205,11 +217,11 @@ def test(rawdata_dir='UT160328/',reduction_dir=None,dodetector='blue',dograting=
             plt.imshow(imdata[1:1028,924:1124], cmap='gray',vmin=-80, vmax=80)
             cont=raw_input('   enter the continuum y pixel value: ')
             print('   the aperture will be centered on line '+str(answer))
-            contpeak.append(answer)
+#            contpeak.append(answer)
 
 
 
-    return contpeak
+    return answer
 
 
 
