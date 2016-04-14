@@ -1,3 +1,3 @@
 This is my initial attempt to script the reduction of DIS data.
-Having completed a "by-hand" reduction of the data in IRAF, my goal is to translate those steps into a Python/Pyraf script.
+Having "completed" (everything except cosmic ray rejection & flux calibration) a manual reduction of the data in IRAF, my goal is to translate those steps into a Python/Pyraf script.
 
