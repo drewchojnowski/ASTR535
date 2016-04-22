@@ -1,0 +1,6 @@
+This program does basic image reduction (bias and overscan correction, flat-fielding) of data from APO 3.5m instruments DIS and ARCTIC.
+
+It's pretty flexible - just start ipython, import it, and run it without setting any parameters, e.g.
+In [1]: import apored as a
+In [2]: x=a.test()
+You will be prompted for needed info.
