@@ -5,7 +5,10 @@ In [1]: import apored as a
 In [2]: x=a.test()
 You will be prompted for needed info.
 
-Notes:
+Important notes:
+
 1. for ARCTIC, UT160327, the file "160327.0047.fits" seems to be corrupted, and "ARCTIC_Bias.0001.fits" has a weird trend that doesn't show up in subsequent biases. Move these files to a "bad" directory before running the script.
+
 2. for DIS, UT160328, make another "bad" directory and move the following files into it: 160328.0038*.fits, Ar.0003*.fits, He.0001*.fits, Ne.0002*.fits
+
 3. for DIS, UT160328, we neglected to get biases for the B400/R300 grating observations. 
