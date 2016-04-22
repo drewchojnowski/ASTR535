@@ -1,0 +1,18 @@
+This is my initial attempt to script the reduction of DIS data.
+
+Having "completed" (everything except cosmic ray rejection & flux calibration) a manual reduction of the data in IRAF, my goal is to translate those steps into a Python/Pyraf script.
+
+Currently, the script is not modular and not very pretty, but it does automate some of the initial reduction steps. The user specifies a (1) raw data directory, (2) a detector, (3) and a grating. Then the code does the following:
+
+1. make a directory for reduction files.
+2. establish some parameters based on the detector
+3. sort the raw data files into lists comps, objs, flats, biases corresponding to the detector/grating of choice.
+4. (optional) print out some header information from the images
+5. make a master Bias frame using IRAF-IMCOMBINE
+6. do the overscan and bias subtraction of flats,comps,objs using IRAF-CCDPROC
+7. make a master Flat using IRAF-IMCOMBINE
+8. normalize the response of the master flat using IRAF-RESPONSE
+9. flat field the comps and objs using IRAF-CCDPROC
+10. this part doesn't work yet, but this is where you would use APALL to extract apertures.
+
+
