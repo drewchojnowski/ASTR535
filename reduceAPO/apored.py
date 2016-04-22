@@ -6,7 +6,7 @@ import glob
 import os
 import sys
 
-def test(instr=None,rawdata_dir='UT160328',reduction_dir=None,dograting=None,dofilter=None,silent=False):
+def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=None,silent=False):
     print('='*70)
     print("---------- Drew's APO 3.5m reduction script ----------")
     print('='*70)
