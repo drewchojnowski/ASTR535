@@ -6,7 +6,7 @@ import glob
 import os
 import sys
 
-def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=None,silent=False):
+def test(instr=None,rawdata_dir='UT160327',reduction_dir=None,dograting=None,dofilter=None,silent=False):
     print('='*70)
     print("---------- Drew's APO 3.5m reduction script ----------")
     print('='*70)
@@ -103,10 +103,12 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         iraf.twod(); iraf.apex(); iraf.longs(); iraf.oned()
         print('='*70)
         print('5. DIS PARAMETER ESTABLISHMENT\n')
-        grating=[]
+        grating=[]; imagetypes=[]
         for rawfile in rawfiles:
             head=fits.getheader(rawfile)
             grating.append(head['grating'])
+            imagetypes.append(head['imagetyp'].lower())
+        imagetypes=np.array(imagetypes)
         grating=np.array(grating)
         uniquegrating=np.unique(grating)
 
@@ -121,15 +123,27 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
             if a=='': a='1'
             dograting=uniquegrating[int(a[:1])-1]
             gd=np.where(grating==dograting); ngd=len(gd[0])
-            rawfiles=rawfiles[gd]
+            rawfiles=rawfiles[gd]; imagetypes=imagetypes[gd]
             print('\nOk. '+dograting+' data will be reduced: '+str(ngd)+' total images')
         else:
             gd=np.where(grating==dograting); ngd=len(gd[0])
             if ngd==0:
                 sys.exit('No '+dograting+' images found. Exiting the APO 3.5m reduction script.')
             else:
-                rawfiles=rawfiles[gd]
+                rawfiles=rawfiles[gd]; imagetypes=imagetypes[gd]
                 print('\nOk. '+dograting+' images will be reduced: '+str(ngd)+' total images')
+
+        bias=np.where((imagetypes=='bias') | (imagetypes=='zero')); nbias=len(bias[0])
+        zerocor='yes'
+        if nbias==0:
+            print('\nNo bias images were found. Proceed without bias correction? (y/n)')
+            a=raw_input('')
+            if (a[:1]=='y') | (a==''): 
+                zerocor='no'; biasfiles=''; nbias=0
+            else:
+                sys.exit('Exiting the APO 3.5m reduction script.')
+        else:
+            biasfiles=rawfiles[bias]; nbias=len(bias[0])
 
         # get values depending on R vs B detector
         detector=dograting[:1].lower()
@@ -161,12 +175,26 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         badpixfile=''
         fixpix='no'
 
-        filters=[]
+        filters=[]; imagetypes=[]
         for rawfile in rawfiles:
             head=fits.getheader(rawfile)
             filters.append(head['filter'])
+            imagetypes.append(head['imagetyp'].lower())
+        imagetypes=np.array(imagetypes)
         filters=np.array(filters)
         uniquefilters=np.unique(filters)
+
+        bias=np.where(imagetypes=='bias'); nbias=len(bias[0])
+        zcor='yes'
+        if nbias==0:
+            print('\nNo bias images were found. Proceed without bias correction? (y/n)')
+            a=raw_input('')
+            if (a[:1]=='y') | (a==''): 
+                zcor='no'; biasfiles=''
+            else:
+                sys.exit('Exiting the APO 3.5m reduction script.')
+        else:
+            biasfiles=rawfiles[bias]; nbias=len(bias[0])
 
         # establish ARCTIC filter
         if dofilter is None:
@@ -190,11 +218,13 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
                 rawfiles=rawfiles[gd]
                 print('\nOk. '+dofilter+' filter images will be reduced: '+str(ngd)+' total images')
 
+
         head=fits.getheader(rawfiles[0])
         biassec=head['bsec11']
         datasec=head['dsec11']
 
         genericlabel=dofilter.replace(' ','_')
+        genericlabel=genericlabel.replace('/','_')
 
         print('\nOk. ARCTIC parameters established.')
         print('='*70)
@@ -216,7 +246,6 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
     dec=np.array(dec)
 
     # separate the files into biases, flat, objs, and comps
-    bias=np.where((imtype=='bias') | (imtype=='zero'));  nbias=len(bias[0]); biasfiles=rawfiles[bias]
     flat=np.where(imtype=='flat');  nflat=len(flat[0]); flatfiles=rawfiles[flat]
     obj=np.where(imtype=='object'); nobj=len(obj[0]);   objfiles=rawfiles[obj]
     if instr=='dis':
@@ -229,20 +258,21 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
 
 ##########################################################################################################
     print('7. MAKE MASTER BIAS\n')
-    masterzero=reduction_dir+'Zero_'+genericlabel+'.fits'
-    a=raw_input('Average combine biases into master bias (y/n)? ')
-    if (a[:1]=='y') | (a==''):
-        iraf.imcombine(','.join(biasfiles),output=masterzero,combine='average',reject='avsigclip',lsigma='3',
-                       hsigma='3',rdnoise=rdnoise,gain=gain)
-        print('\nOk. A master bias has been made: '+masterzero)
-    print('='*70)
+    if zcor=='yes':
+        masterzero=reduction_dir+'Zero_'+genericlabel+'.fits'
+        a=raw_input('Average combine biases into master bias (y/n)? ')
+        if (a[:1]=='y') | (a==''):
+            iraf.imcombine(','.join(biasfiles),output=masterzero,combine='average',reject='avsigclip',lsigma='3',
+                           hsigma='3',rdnoise=rdnoise,gain=gain)
+            print('\nOk. A master bias has been made: '+masterzero)
+        print('='*70)
+    else:
+        masterzero=''
+        print('\nOk, you have no bias files. Proceeding')
 
 
 ##########################################################################################################
     print('8. BIAS AND OVERSCAN CORRECTION\n')
-    # do the overscan and bias subtraction on the flat and obj frames via IRAF-CCDPROC
-    # don't do any trimming for now
-
     a=raw_input('Overscan and bias-subtraction of the flats, objs, and if DIS, comps. Do it (y/n)? ')
     if (a[:1]=='y') | (a==''):
         # set up a list of the input files (flats, comps, objs)
@@ -262,9 +292,8 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         outfilesfile=reduction_dir+'outlist_'+genericlabel+'_ccdproc1'
         np.savetxt(outfilesfile,outfiles,fmt='%s')
 
-        # Now for the CCDPROC command
         iraf.ccdproc('@'+infilesfile,output='@'+outfilesfile,ccdtype='',fixpix=fixpix,oversca='yes',trim='yes',
-                     zerocor='yes',darkcor='no',flatcor='no',fixfile=badpixfile,biassec=biassec,trimsec=datasec,
+                     zerocor=zcor,darkcor='no',flatcor='no',fixfile=badpixfile,biassec=biassec,trimsec=datasec,
                      zero=masterzero,interac='no',low_rej='3',high_re='3')
         print('\nOk. Overscan and bias subtracting done.')
     print('='*70)
@@ -296,7 +325,7 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         if instr=='arctic':
             im=fits.getdata(masterflat)
             imdim=len(im)
-            meanval=np.mean(im[imdim-50:imdim+50,imdim-50:imdim+50])
+            meanval=np.mean(im[imdim-100:imdim+100,imdim-100:imdim+100])
             iraf.imarith(operand1=masterflat,op='/',operand2=meanval,result=masternormflat)
             print('\nOk. A normalized master flat has been created: '+masternormflat)
         if instr=='dis':
@@ -325,7 +354,6 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         infilesfile=reduction_dir+'inlist_'+genericlabel+'_ccdproc2'
         np.savetxt(infilesfile,infiles,fmt='%s')
 
-        # We're making changes to the images now, so need to set up a list of output files
         outfiles=[]
         for infile in infiles: 
             outfiles.append(infile.replace('cproc1','cproc2'))
@@ -333,7 +361,6 @@ def test(instr=None,rawdata_dir=None,reduction_dir=None,dograting=None,dofilter=
         outfilesfile=reduction_dir+'outlist_'+genericlabel+'_ccdproc2'
         np.savetxt(outfilesfile,outfiles,fmt='%s')
 
-        # Now for the CCDPROC command
         iraf.ccdproc('@'+infilesfile,output='@'+outfilesfile,ccdtype='',fixpix='no',oversca='no',trim='no',
                      zerocor='no',darkcor='no',flatcor='yes',fixfile='',biassec=biassec,trimsec=datasec,
                      flat=masternormflat,interac='no',low_rej='3',high_re='3')
