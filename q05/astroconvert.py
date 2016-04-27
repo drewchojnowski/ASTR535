@@ -18,7 +18,7 @@ import scipy
 
 def lightunits(wavelength=0,frequency=0,energy=0):
     cspeed=2.99792458e8 # m/s
-    hplanck=4.135667662e-15 # eV/s
+    hplanck=4.135667662e-15 # eV s
 
     # find out which value has been provided
     vals=np.array([wavelength,frequency,energy])

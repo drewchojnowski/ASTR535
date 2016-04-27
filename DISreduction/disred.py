@@ -10,6 +10,7 @@ def test(rawdata_dir='UT160328/',reduction_dir=None,dodetector='blue',dograting=
     print("---------- Drew's DIS reduction script ----------")
     print('-'*49)
 
+    # load some IRAF packages
     iraf.noao()
     iraf.imred()
     iraf.ccdred()
