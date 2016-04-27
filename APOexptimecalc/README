@@ -1,6 +1,8 @@
 4/27/16 Update:
 
-I propose that we require users to input a V-band magnitude
+Executive decisions by Drew:
+1. Users are required to supply a *V-band* magnitude
+2. For moon phase, users are required to supply a value between 0 and 14, indicating the numbers of days since new moon.
 
 Things that currently work:
 - optional user input
