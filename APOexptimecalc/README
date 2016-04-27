@@ -1,0 +1,13 @@
+4/27/16 Update:
+
+I propose that we require users to input a V-band magnitude
+
+Things that currently work:
+- optional user input
+- establishment of some instrument paramaters, depending on instrument choice
+- blackbody calculator
+- interpolator
+- mirror throughput calculation
+
+Things that currently don't work:
+- everything else
